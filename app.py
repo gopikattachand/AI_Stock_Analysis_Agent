@@ -54,7 +54,8 @@ def generate_ai_summary(stock, company_name, current_price, price_change_percent
         client = OpenAI(api_key=api_key)
 
         prompt = f"""
-        You are an AI stock analysis assistant. Explain this stock in simple beginner-friendly language.
+        You are a modern AI stock research assistant for beginner investors.
+        Your job is to create a clean, useful, and easy-to-read stock summary.
 
         Stock Symbol: {stock}
         Company: {company_name}
@@ -63,17 +64,35 @@ def generate_ai_summary(stock, company_name, current_price, price_change_percent
         Volatility: {volatility:.2f}%
         RSI: {latest_rsi:.2f}
         Risk Level: {risk}
-        Recommendation: {recommendation}
-        Recent News Summary: {news_summary}
+        System Recommendation: {recommendation}
+        Recent News Headlines: {news_summary}
 
-        Give a short analysis with:
-        1. Simple stock overview
-        2. Trend explanation
-        3. Risk explanation
-        4. News sentiment explanation
-        5. Final educational note
+        Write the response in this exact format using markdown:
 
-        Do not provide guaranteed financial advice.
+        ### Quick Verdict
+        Give a clear 2-3 sentence summary of what is happening with the stock right now.
+
+        ### Price Trend
+        Explain the 6-month trend in simple language. Mention whether momentum looks strong, weak, or mixed.
+
+        ### Risk Check
+        Explain the risk level using volatility and RSI. Keep it beginner-friendly.
+
+        ### News Impact
+        Explain what the recent news headlines suggest about investor sentiment. Do not overclaim.
+
+        ### What To Watch Next
+        Give 3 short bullet points about what a beginner should watch before making any decision.
+
+        ### Final Note
+        End with one educational reminder that this is not financial advice and users should research before investing.
+
+        Style rules:
+        - Sound professional but simple.
+        - Avoid robotic language.
+        - Do not promise profits.
+        - Do not say BUY is guaranteed.
+        - Keep it under 220 words.
         """
 
         response = client.chat.completions.create(
@@ -82,7 +101,7 @@ def generate_ai_summary(stock, company_name, current_price, price_change_percent
                 {"role": "system", "content": "You are a helpful AI finance education assistant."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=400,
+            max_tokens=550,
             temperature=0.4
         )
 
@@ -131,24 +150,105 @@ def ask_finance_chatbot(question, stock_context):
         return f"Chatbot response could not be generated: {e}"
 
 
-st.set_page_config(page_title="AI Stock Analysis Agent", layout="wide")
+
+st.set_page_config(page_title="AI Stock Analysis Agent", page_icon="📈", layout="wide")
+st.markdown(
+    """
+    <style>
+    .main {
+        background-color: #0E1117;
+    }
+
+    .stApp {
+        background: linear-gradient(to bottom right, #0E1117, #111827);
+        color: white;
+    }
+
+    .ai-summary-box {
+        background: linear-gradient(135deg, #1E293B, #0F172A);
+        padding: 25px;
+        border-radius: 20px;
+        border: 1px solid #334155;
+        margin-top: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0px 0px 15px rgba(0,255,255,0.15);
+    }
+
+    .chatbot-box {
+        background: linear-gradient(135deg, #111827, #1F2937);
+        padding: 25px;
+        border-radius: 20px;
+        border: 1px solid #374151;
+        margin-top: 15px;
+        box-shadow: 0px 0px 20px rgba(59,130,246,0.2);
+    }
+
+    .robot-title {
+        font-size: 28px;
+        font-weight: bold;
+        color: #60A5FA;
+    }
+
+    .summary-title {
+        font-size: 28px;
+        font-weight: bold;
+        color: #22C55E;
+    }
+
+    .summary-helper-text {
+        color: #CBD5E1;
+        font-size: 15px;
+        margin-top: 8px;
+        margin-bottom: 15px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+st.sidebar.title("📊 AI Stock Agent")
+st.sidebar.markdown("Built by **Gopichand Katta**")
+st.sidebar.divider()
+st.sidebar.markdown("### Features")
+st.sidebar.markdown(
+    """
+    - Live stock data
+    - Moving averages
+    - RSI analysis
+    - News sentiment
+    - AI stock summary
+    - Multi-stock comparison
+    - AI finance chatbot
+    """
+)
+st.sidebar.divider()
+st.sidebar.caption("Educational project — not financial advice.")
 
 st.title("📈 AI Stock Analysis Agent")
 st.markdown("### Built by **Gopichand Katta**")
-st.write("Enter a stock symbol to analyze stock market data.")
+st.info(
+    "Enter a stock symbol to analyze live market data, technical indicators, news sentiment, and AI-generated insights."
+)
 
-stock = st.text_input("Enter Stock Symbol", "AAPL")
+stock = st.text_input(
+    "Enter Stock Symbol",
+    "AAPL",
+    help="Example: AAPL, TSLA, NVDA, MSFT"
+)
 
 if stock:
     stock = stock.upper()
 
-    st.subheader(f"Stock Analysis for {stock}")
+    st.header(f"Stock Analysis for {stock}")
 
     ticker = yf.Ticker(stock)
 
     try:
-        data = ticker.history(period="6mo")
-        info = ticker.info
+        with st.spinner("Fetching latest stock data..."):
+            data = ticker.history(period="6mo")
+
+        with st.spinner("Loading company information..."):
+            info = ticker.info
 
         if data.empty:
             st.error("No stock data found. Please check the stock symbol.")
@@ -161,11 +261,12 @@ if stock:
 
             st.success(f"Company: {company_name}")
 
-            col1, col2, col3 = st.columns(3)
+            metric_col1, metric_col2, metric_col3 = st.columns(3)
+            metric_col1.metric("Current Price", current_price)
+            metric_col2.metric("Market Cap", market_cap)
+            metric_col3.metric("Volume", volume)
 
-            col1.metric("Current Price", current_price)
-            col2.metric("Market Cap", market_cap)
-            col3.metric("Volume", volume)
+            st.divider()
 
             data["MA20"] = data["Close"].rolling(window=20).mean()
             data["MA50"] = data["Close"].rolling(window=50).mean()
@@ -204,8 +305,8 @@ if stock:
 
             st.info(rsi_explanation)
 
-            st.subheader("Recent Stock Data")
-            st.dataframe(data.tail(10))
+            with st.expander("View Recent Stock Data"):
+                st.dataframe(data.tail(10))
 
             st.subheader("AI Stock Insight")
 
@@ -233,9 +334,7 @@ if stock:
                 recommendation = "AVOID ❌"
                 explanation = "The stock has negative momentum over the selected time period."
 
-            st.write(
-                f"The stock shows a {trend} trend over the last 6 months."
-            )
+            st.write(f"The stock shows a {trend} trend over the last 6 months.")
 
             col4, col5, col6 = st.columns(3)
             col4.metric("6 Month Change", f"{price_change_percent:.2f}%")
@@ -266,23 +365,31 @@ if stock:
 
                     st.divider()
 
-            st.subheader("AI Generated Stock Summary")
-
             news_summary = " | ".join(news_titles[:5]) if news_titles else "No recent news available."
 
-            if st.button("Generate AI Summary"):
-                ai_summary = generate_ai_summary(
-                    stock,
-                    company_name,
-                    current_price,
-                    price_change_percent,
-                    volatility,
-                    latest_rsi,
-                    risk,
-                    recommendation,
-                    news_summary
-                )
-                st.write(ai_summary)
+            st.markdown('<div class="ai-summary-box">', unsafe_allow_html=True)
+            st.markdown('<div class="summary-title">🤖 AI Stock Research Summary</div>', unsafe_allow_html=True)
+            st.markdown(
+                '<div class="summary-helper-text">Get a clean beginner-friendly breakdown of trend, risk, news impact, and what to watch next.</div>',
+                unsafe_allow_html=True
+            )
+
+            if st.button("Generate Better AI Summary", type="primary"):
+                with st.spinner("Creating a smarter AI stock summary..."):
+                    ai_summary = generate_ai_summary(
+                        stock,
+                        company_name,
+                        current_price,
+                        price_change_percent,
+                        volatility,
+                        latest_rsi,
+                        risk,
+                        recommendation,
+                        news_summary
+                    )
+                    st.markdown(ai_summary)
+
+            st.markdown('</div>', unsafe_allow_html=True)
 
             st.subheader("Multi-Stock Comparison")
             st.write("Compare multiple stocks based on normalized 6-month performance.")
@@ -320,7 +427,8 @@ if stock:
 
                     st.plotly_chart(comparison_fig, use_container_width=True)
 
-            st.subheader("AI Finance Chatbot")
+            st.markdown('<div class="chatbot-box">', unsafe_allow_html=True)
+            st.markdown('<div class="robot-title">🤖 AI Finance Assistant</div>', unsafe_allow_html=True)
             st.write("Ask questions about the selected stock, risk, trend, RSI, or recent news.")
 
             stock_context = f"""
@@ -341,14 +449,16 @@ if stock:
                 "Why is this stock risky or safe?"
             )
 
-            if st.button("Ask Chatbot"):
-                chatbot_answer = ask_finance_chatbot(user_question, stock_context)
-                st.write(chatbot_answer)
+            if st.button("Ask Chatbot", type="primary"):
+                with st.spinner("Thinking..."):
+                    chatbot_answer = ask_finance_chatbot(user_question, stock_context)
+                    st.info(chatbot_answer)
+
+            st.markdown('</div>', unsafe_allow_html=True)
 
             st.caption(
                 "Built by Gopichand Katta | This is an educational project, not financial advice."
             )
-
 
     except Exception as e:
         st.error("Something went wrong while fetching stock data.")
