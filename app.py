@@ -4,9 +4,89 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from openai import OpenAI
+import sqlite3
 
 positive_words = ["growth", "gain", "beat", "strong", "record", "surge", "profit", "upgrade", "positive", "bullish"]
 negative_words = ["loss", "drop", "fall", "weak", "miss", "risk", "lawsuit", "cut", "negative", "bearish"]
+
+
+def init_database():
+    conn = sqlite3.connect("stock_agent.db")
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS watchlist (
+            symbol TEXT PRIMARY KEY
+        )
+        """
+    )
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS portfolio (
+            symbol TEXT,
+            quantity REAL,
+            buy_price REAL
+        )
+        """
+    )
+
+    conn.commit()
+    conn.close()
+
+
+def add_watchlist_symbol(symbol):
+    conn = sqlite3.connect("stock_agent.db")
+    cursor = conn.cursor()
+    cursor.execute("INSERT OR IGNORE INTO watchlist (symbol) VALUES (?)", (symbol.upper(),))
+    conn.commit()
+    conn.close()
+
+
+def get_watchlist_symbols():
+    conn = sqlite3.connect("stock_agent.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT symbol FROM watchlist")
+    rows = cursor.fetchall()
+    conn.close()
+    return [row[0] for row in rows]
+
+
+def clear_watchlist():
+    conn = sqlite3.connect("stock_agent.db")
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM watchlist")
+    conn.commit()
+    conn.close()
+
+
+def add_portfolio_position(symbol, quantity, buy_price):
+    conn = sqlite3.connect("stock_agent.db")
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO portfolio (symbol, quantity, buy_price) VALUES (?, ?, ?)",
+        (symbol.upper(), quantity, buy_price)
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_portfolio_positions():
+    conn = sqlite3.connect("stock_agent.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT symbol, quantity, buy_price FROM portfolio")
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+
+
+def clear_portfolio():
+    conn = sqlite3.connect("stock_agent.db")
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM portfolio")
+    conn.commit()
+    conn.close()
 
 
 def analyze_sentiment(title):
@@ -153,6 +233,7 @@ def ask_finance_chatbot(question, stock_context):
 
 
 st.set_page_config(page_title="AI Stock Analysis Agent", page_icon="📈", layout="wide")
+init_database()
 st.markdown(
     """
     <style>
@@ -474,15 +555,25 @@ if stock:
             st.markdown('</div>', unsafe_allow_html=True)
 
             st.subheader("⭐ Stock Watchlist")
-            st.write("Track favorite stocks and quickly review current price movement.")
+            st.write("Save favorite stocks and quickly review current price movement.")
 
-            watchlist_input = st.text_input(
-                "Enter watchlist symbols separated by commas",
-                "AAPL, TSLA, NVDA, MSFT"
-            )
+            new_watch_symbol = st.text_input("Add stock to watchlist", "AAPL")
 
-            if watchlist_input:
-                watchlist_symbols = [symbol.strip().upper() for symbol in watchlist_input.split(",") if symbol.strip()]
+            watch_col1, watch_col2 = st.columns(2)
+
+            with watch_col1:
+                if st.button("Add to Watchlist"):
+                    add_watchlist_symbol(new_watch_symbol)
+                    st.success(f"{new_watch_symbol.upper()} added to watchlist.")
+
+            with watch_col2:
+                if st.button("Clear Watchlist"):
+                    clear_watchlist()
+                    st.warning("Watchlist cleared.")
+
+            watchlist_symbols = get_watchlist_symbols()
+
+            if watchlist_symbols:
                 watchlist_data = []
 
                 for symbol in watchlist_symbols:
@@ -517,7 +608,9 @@ if stock:
                     watchlist_df = pd.DataFrame(watchlist_data)
                     st.dataframe(watchlist_df, use_container_width=True)
                 else:
-                    st.warning("No watchlist data found. Please check the symbols.")
+                    st.warning("No watchlist data found. Please check the saved symbols.")
+            else:
+                st.info("Your watchlist is empty. Add a stock symbol above.")
 
             st.divider()
 
