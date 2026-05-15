@@ -473,6 +473,54 @@ if stock:
 
             st.markdown('</div>', unsafe_allow_html=True)
 
+            st.subheader("⭐ Stock Watchlist")
+            st.write("Track favorite stocks and quickly review current price movement.")
+
+            watchlist_input = st.text_input(
+                "Enter watchlist symbols separated by commas",
+                "AAPL, TSLA, NVDA, MSFT"
+            )
+
+            if watchlist_input:
+                watchlist_symbols = [symbol.strip().upper() for symbol in watchlist_input.split(",") if symbol.strip()]
+                watchlist_data = []
+
+                for symbol in watchlist_symbols:
+                    try:
+                        watchlist_ticker = yf.Ticker(symbol)
+                        watchlist_info = watchlist_ticker.info
+                        watchlist_history = watchlist_ticker.history(period="5d")
+
+                        current_watch_price = watchlist_info.get("currentPrice", 0)
+                        company_watch_name = watchlist_info.get("shortName", symbol)
+
+                        if not watchlist_history.empty and len(watchlist_history) >= 2:
+                            previous_close = watchlist_history["Close"].iloc[-2]
+                            price_change = current_watch_price - previous_close
+                            price_change_percent = (price_change / previous_close) * 100
+                        else:
+                            price_change = 0
+                            price_change_percent = 0
+
+                        watchlist_data.append({
+                            "Symbol": symbol,
+                            "Company": company_watch_name,
+                            "Current Price": round(current_watch_price, 2),
+                            "Daily Change": round(price_change, 2),
+                            "Daily Change %": round(price_change_percent, 2)
+                        })
+
+                    except Exception:
+                        pass
+
+                if watchlist_data:
+                    watchlist_df = pd.DataFrame(watchlist_data)
+                    st.dataframe(watchlist_df, use_container_width=True)
+                else:
+                    st.warning("No watchlist data found. Please check the symbols.")
+
+            st.divider()
+
             st.subheader("📁 Portfolio Tracker")
             st.write("Track your stock positions, profit/loss, and portfolio allocation.")
 
