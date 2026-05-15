@@ -94,6 +94,7 @@ def generate_ai_summary(stock, company_name, current_price, price_change_percent
 st.set_page_config(page_title="AI Stock Analysis Agent", layout="wide")
 
 st.title("📈 AI Stock Analysis Agent")
+st.markdown("### Built by **Gopichand Katta**")
 st.write("Enter a stock symbol to analyze stock market data.")
 
 stock = st.text_input("Enter Stock Symbol", "AAPL")
@@ -280,7 +281,7 @@ if stock:
                     st.plotly_chart(comparison_fig, use_container_width=True)
 
             st.caption(
-                "Note: This is an educational project, not financial advice."
+                "Built by Gopichand Katta | This is an educational project, not financial advice."
             )
 
 
