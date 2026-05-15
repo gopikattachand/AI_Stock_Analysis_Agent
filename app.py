@@ -2,6 +2,7 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from openai import OpenAI
 
 positive_words = ["growth", "gain", "beat", "strong", "record", "surge", "profit", "upgrade", "positive", "bullish"]
@@ -275,6 +276,31 @@ if stock:
             )
 
             st.plotly_chart(fig, use_container_width=True)
+
+            st.subheader("Candlestick Price Chart")
+
+            candlestick_fig = go.Figure(
+                data=[
+                    go.Candlestick(
+                        x=chart_data["Date"],
+                        open=chart_data["Open"],
+                        high=chart_data["High"],
+                        low=chart_data["Low"],
+                        close=chart_data["Close"],
+                        name="Price"
+                    )
+                ]
+            )
+
+            candlestick_fig.update_layout(
+                title=f"{stock} Candlestick Chart",
+                xaxis_title="Date",
+                yaxis_title="Price",
+                xaxis_rangeslider_visible=False,
+                height=500
+            )
+
+            st.plotly_chart(candlestick_fig, use_container_width=True)
 
             st.subheader("Technical Indicator: RSI")
 
