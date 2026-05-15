@@ -155,48 +155,39 @@ st.set_page_config(page_title="AI Stock Analysis Agent", page_icon="📈", layou
 st.markdown(
     """
     <style>
-    .main {
-        background-color: #0E1117;
-    }
-
     .stApp {
-        background: linear-gradient(to bottom right, #0E1117, #111827);
-        color: white;
+        background-color: #F8FAFC;
+        color: #111827;
     }
 
-    .ai-summary-box {
-        background: linear-gradient(135deg, #1E293B, #0F172A);
-        padding: 25px;
-        border-radius: 20px;
-        border: 1px solid #334155;
-        margin-top: 15px;
+    h1, h2, h3, h4 {
+        color: #111827;
+    }
+
+    .ai-summary-box, .chatbot-box {
+        background: #FFFFFF;
+        padding: 24px;
+        border-radius: 18px;
+        border: 1px solid #E5E7EB;
+        margin-top: 20px;
         margin-bottom: 20px;
-        box-shadow: 0px 0px 15px rgba(0,255,255,0.15);
-    }
-
-    .chatbot-box {
-        background: linear-gradient(135deg, #111827, #1F2937);
-        padding: 25px;
-        border-radius: 20px;
-        border: 1px solid #374151;
-        margin-top: 15px;
-        box-shadow: 0px 0px 20px rgba(59,130,246,0.2);
-    }
-
-    .robot-title {
-        font-size: 28px;
-        font-weight: bold;
-        color: #60A5FA;
+        box-shadow: 0px 4px 14px rgba(0,0,0,0.08);
     }
 
     .summary-title {
         font-size: 28px;
-        font-weight: bold;
-        color: #22C55E;
+        font-weight: 700;
+        color: #047857;
+    }
+
+    .robot-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #2563EB;
     }
 
     .summary-helper-text {
-        color: #CBD5E1;
+        color: #4B5563;
         font-size: 15px;
         margin-top: 8px;
         margin-bottom: 15px;
