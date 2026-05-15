@@ -243,9 +243,46 @@ if stock:
                 )
                 st.write(ai_summary)
 
+            st.subheader("Multi-Stock Comparison")
+            st.write("Compare multiple stocks based on normalized 6-month performance.")
+
+            comparison_input = st.text_input(
+                "Enter stock symbols separated by commas",
+                "AAPL, TSLA, NVDA, MSFT"
+            )
+
+            if comparison_input:
+                symbols = [symbol.strip().upper() for symbol in comparison_input.split(",")]
+                comparison_data = pd.DataFrame()
+
+                for symbol in symbols:
+                    comparison_ticker = yf.Ticker(symbol)
+                    comparison_history = comparison_ticker.history(period="6mo")
+
+                    if not comparison_history.empty:
+                        normalized_price = (
+                            comparison_history["Close"] / comparison_history["Close"].iloc[0]
+                        ) * 100
+                        comparison_data[symbol] = normalized_price
+
+                if comparison_data.empty:
+                    st.warning("No comparison data found. Please check the symbols.")
+                else:
+                    comparison_data = comparison_data.reset_index()
+
+                    comparison_fig = px.line(
+                        comparison_data,
+                        x="Date",
+                        y=symbols,
+                        title="Normalized Stock Performance Comparison"
+                    )
+
+                    st.plotly_chart(comparison_fig, use_container_width=True)
+
             st.caption(
                 "Note: This is an educational project, not financial advice."
             )
+
 
     except Exception as e:
         st.error("Something went wrong while fetching stock data.")
