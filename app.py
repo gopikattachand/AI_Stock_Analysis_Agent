@@ -473,6 +473,71 @@ if stock:
 
             st.markdown('</div>', unsafe_allow_html=True)
 
+            st.subheader("📁 Portfolio Tracker")
+            st.write("Track your stock positions, profit/loss, and portfolio allocation.")
+
+            portfolio_input = st.text_area(
+                "Enter portfolio data (Symbol, Quantity, Buy Price)",
+                "AAPL,10,180\nTSLA,5,220\nNVDA,3,950"
+            )
+
+            portfolio_rows = [row.strip() for row in portfolio_input.splitlines() if row.strip()]
+            portfolio_data = []
+
+            for row in portfolio_rows:
+                try:
+                    symbol, quantity, buy_price = row.split(",")
+
+                    symbol = symbol.strip().upper()
+                    quantity = float(quantity.strip())
+                    buy_price = float(buy_price.strip())
+
+                    portfolio_ticker = yf.Ticker(symbol)
+                    portfolio_info = portfolio_ticker.info
+                    current_stock_price = portfolio_info.get("currentPrice", 0)
+
+                    invested_value = quantity * buy_price
+                    current_value = quantity * current_stock_price
+                    profit_loss = current_value - invested_value
+                    profit_loss_percent = ((current_value - invested_value) / invested_value) * 100
+
+                    portfolio_data.append({
+                        "Symbol": symbol,
+                        "Quantity": quantity,
+                        "Buy Price": round(buy_price, 2),
+                        "Current Price": round(current_stock_price, 2),
+                        "Invested": round(invested_value, 2),
+                        "Current Value": round(current_value, 2),
+                        "P/L": round(profit_loss, 2),
+                        "P/L %": round(profit_loss_percent, 2)
+                    })
+
+                except Exception:
+                    pass
+
+            if portfolio_data:
+                portfolio_df = pd.DataFrame(portfolio_data)
+
+                total_invested = portfolio_df["Invested"].sum()
+                total_current = portfolio_df["Current Value"].sum()
+                total_pl = portfolio_df["P/L"].sum()
+
+                portfolio_metric1, portfolio_metric2, portfolio_metric3 = st.columns(3)
+                portfolio_metric1.metric("Total Invested", f"${total_invested:,.2f}")
+                portfolio_metric2.metric("Current Portfolio Value", f"${total_current:,.2f}")
+                portfolio_metric3.metric("Total Profit/Loss", f"${total_pl:,.2f}")
+
+                st.dataframe(portfolio_df, use_container_width=True)
+
+                allocation_fig = px.pie(
+                    portfolio_df,
+                    names="Symbol",
+                    values="Current Value",
+                    title="Portfolio Allocation"
+                )
+
+                st.plotly_chart(allocation_fig, use_container_width=True)
+
             st.caption(
                 "Built by Gopichand Katta | This is an educational project, not financial advice."
             )
