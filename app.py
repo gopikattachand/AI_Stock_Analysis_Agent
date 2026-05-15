@@ -91,6 +91,46 @@ def generate_ai_summary(stock, company_name, current_price, price_change_percent
     except Exception as e:
         return f"AI summary could not be generated: {e}"
 
+
+def ask_finance_chatbot(question, stock_context):
+    try:
+        api_key = st.secrets.get("OPENAI_API_KEY")
+
+        if not api_key:
+            return "OpenAI API key not found. Add it inside .streamlit/secrets.toml to enable the chatbot."
+
+        client = OpenAI(api_key=api_key)
+
+        prompt = f"""
+        You are an AI finance education chatbot. Use the stock context below to answer the user's question.
+
+        Stock Context:
+        {stock_context}
+
+        User Question:
+        {question}
+
+        Answer in simple beginner-friendly language.
+        Do not promise profits.
+        Do not give guaranteed financial advice.
+        """
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful AI finance education assistant."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=350,
+            temperature=0.4
+        )
+
+        return response.choices[0].message.content
+
+    except Exception as e:
+        return f"Chatbot response could not be generated: {e}"
+
+
 st.set_page_config(page_title="AI Stock Analysis Agent", layout="wide")
 
 st.title("📈 AI Stock Analysis Agent")
@@ -279,6 +319,31 @@ if stock:
                     )
 
                     st.plotly_chart(comparison_fig, use_container_width=True)
+
+            st.subheader("AI Finance Chatbot")
+            st.write("Ask questions about the selected stock, risk, trend, RSI, or recent news.")
+
+            stock_context = f"""
+            Stock Symbol: {stock}
+            Company: {company_name}
+            Current Price: {current_price}
+            6 Month Change: {price_change_percent:.2f}%
+            Volatility: {volatility:.2f}%
+            RSI: {latest_rsi:.2f}
+            RSI Signal: {rsi_signal}
+            Risk Level: {risk}
+            Recommendation: {recommendation}
+            Recent News: {news_summary}
+            """
+
+            user_question = st.text_input(
+                "Ask the AI Finance Chatbot",
+                "Why is this stock risky or safe?"
+            )
+
+            if st.button("Ask Chatbot"):
+                chatbot_answer = ask_finance_chatbot(user_question, stock_context)
+                st.write(chatbot_answer)
 
             st.caption(
                 "Built by Gopichand Katta | This is an educational project, not financial advice."
